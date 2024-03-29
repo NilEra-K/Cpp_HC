@@ -9,7 +9,7 @@ C++ Highly Concurrent
   - socket 库函数
   - IO 复用 (select、poll、epoll)
   - 阻塞/非阻塞IO
-- 实现 Reactor 高并发服务器 (仿 muduo)
+- **实现 Reactor 高并发服务器 (仿 muduo)**
   - Reactor模型是一种高效的网络设计模式, 它在处理并发连接时表现出色, 适合构建高性能、可伸缩的网络服务器
   - redis、memcache、nginx、rpc框架都是基于 Reactor 模式来实现的
 
@@ -40,6 +40,36 @@ C++ Highly Concurrent
       - `-O3` : **(危险的优化等级)** 比 `O2` 更进一步的优化, 用这个选项会延长编译代码的时间, 并且在使用 *gcc 4.x* 的系统里不应全局启用, 自 *gcc 3.x* 版本以来, gcc 的行为已经有了极大的改变。在 *gcc 3.x* , `-O3` 生成的代码也只是比 `-O2` 快一点点, 而在 `gcc 4.x` 中还未必更快。用 `-O3` 来编译的所有软件包将产生更大体积、更耗内存的二进制文件, 大大增加编译失败的机会或不可与之的程序行为(包括错误)。
       - 如果使用了优化选项 : 1> 编译时间将更长; 2> 目标程序不可调试; 3> 有效果, 但是不可能显著提升程序的性能。
     - `-std=c++11` 支持 C++ 11 标准
+3. 静态库和动态库
+  - 静态库
+    - 什么是静态库 : 程序在编译时会把库文件的二进制代码链接到目标程序中, 这种方式成为静态链接
+    - 如何制作静态库 : 
+      ```bash
+      # 第一种方式: 直接生成静态库文件
+      g++ -c <files> -o libName.a
+      
+      # 第二种方式: 先生成 .o 文件, 再生成库文件
+      g++ -c <files>
+      ar -r libName.a <.o Files>      
+      ```
+    - 如何使用静态库 : <p>
+      `g++ <files> <options> -l<Name> -L<libPath>` <p>
+      其中 `options` 表示选项, `<Name>` 表示库名称, `<libPath>` 表示库路径
+    - 静态库的特点 :
+      - 静态库的链接是在编译时期完成的, 执行的时候代码加载速度快
+      - 目标程序的可执行文件比较大, 浪费空间
+      - 程序的更新和发布不方便, 如果一个静态库更新了, 所有使用它的程序都需要重新编译
+  - 动态库
+    - 什么是动态库 : 
+
+    - 如何制作动态库 :
+      `g++ -fPIC -shared <files> -o libName.so`
+    - 如何使用动态库 :
+      `g++ <files> <options> -l<Name> -L<libPath>` <p>
+      其中 `options` 表示选项, `<Name>` 表示库名称, `<libPath>` 表示库路径 <p>
+      **[ 注意 ]** 运行可执行程序的时候, 需要提前设置 `LD_LIBRARY_PATH` 环境变量, 添加动态库所在位置, 否则将会出现错误 : `ERROR While Loading Shared Libraries: libName.so : Cannot Open Shared Object File: No Such File or Directory` <p>
+      可以使用 `echo $LD_LIBRARY_PATH` 来查看当前的环境变量
+    - 动态库的优点 :
 
 
 
