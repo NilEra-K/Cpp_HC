@@ -165,6 +165,131 @@ C++ Highly Concurrent
 
 ### 7. Linux 时间操作
 UNIX 操作系统根据计算机产生的年代，把 1970 年 01 月 01日作为 UNIX 的纪元时间，将从 1970 年 01 月 01 日起经过的秒数用一个整数存放
+- `time_t` : `time_t` 用于表示一个时间类型，它是一个 `long` 类型的别名，在 **<time.h>** 文件中定义，表示从 1970 年 01 月 01日 00 时 00 分 00 秒到现在的秒数，其定义为 `typedef long time_t`
+- `time()` 库函数
+  - 包含头文件 : `<time.h>`
+  - 声明 : `time_t time(time_t* t_loc);`
+  - 调用 :
+    ```cpp
+    // 调用方式 1
+    time_t now = time(0);   // 将空地址传递给 time() 函数, 并将 time() 的返回值赋给变量 now
 
+    // 调用方式 2
+    time_t now;
+    time(&now); // 将变量 now 的地址作为参数传递给 time() 函数
+    ```
+- `tm` 结构体
+  - `time_t` 是一个长整数，不符合人类的使用习惯，需要转换成 `tm` 结构体，`tm`结构体在 `<time.h>` 中声明，如下:
+  ```cpp
+  struct tm {
+      int tm year;  // 年份 : 其值等于实际年份减去 1900
+      int tm_mon;   // 月份 : 取值区间为[0, 11], 其中 0 代表一月, 11代表 12月
+      int tm_mday;  // 日期 : 一个月中的日期, 取值区间为[1, 31]
+      int tm_hour;  // 时:取值区间为[0, 23]
+      int tm_min;   // 分:取值区间为[0,59]int tm min;
+      int tm_sec;   // 秒:取值区间为[0,59]
+      int tm_wday;  // 星期:取值区间为[0,6]，其中0代表星期天，6 代表星期六
+      int tm_yday;  // 从每年的 01月 01日开始算起的天数, 取值区间为[0, 365]
+      int tm_isdst; // 夏令时标识符，该字段意义不大
+  };
+  ```
+- `localtime()` 库函数
+  - `localtime()` 函数用于将 `time_t` 表示的时间转换为 `tm` 结构体表示的时间
+  - `localtime()` 函数不是线程安全的，`localtime_r()` 是线程安全的
+  - 函数声明
+    ```cpp
+    struct tm* localtime(const time_t* ttimep);
+    struct tm* localtime_r(const time_t* ttimep, struct tm* result);
+    ``` 
+  - 使用方式
+    ```cpp
+    #include <iostream>
+    #include <time.h>
+
+    using namespace std;
+
+    int main(void) {
+        time_t now = time(0);       // 获取当前时间, 存放在 now 中
+        cout << "NOW : " << now << endl;
+
+        tm tmnow;
+        localtime_r(&now, &tmnow);
+
+        string stime = to_string(tmnow.tm_year + 1900) + "-"
+                    + to_string(tmnow.tm_mon + 1) + "-"
+                    + to_string(tmnow.tm_mday) + " "
+                    + to_string(tmnow.tm_hour) + ":"
+                    + to_string(tmnow.tm_min) + ":"
+                    + to_string(tmnow.tm_sec);
+        cout << "stime = " << stime << endl;
+        return 0;
+    }
+    ```
+- `mktime()` 库函数
+  - `mktime()` 函数的功能与 `localtime()` 函数相反，用于把 `tm` 结构体时间转换为 `time_t` 时间
+  - 包含头文件 : `<time.h>`
+  - 函数声明 : `time_t mktime(struct tm* tm)`
+  - 该函数主要用于时间的运算，例如 : 把 `2022-10-01 15:30:25` 加增加 30 分钟
+    - 思路: <p>
+      ① 解析字符串格式的时间，转换成 `tm` 结构体 <p>
+      ② 用 `mktime()` 函数将 `tm` 结构体转换成 `time_t` 时间 <p>
+      ③ 把 `time_t` 时间加 30 * 60 秒 <p>
+      ④ 把 `time_t` 时间转换成 tm 结构体 <p>
+      ⑤ 将 `tm` 结构体转换成字符串
+- `gettimeofday()` 库函数
+  - 用于获取 1970 年 01 月 01 日到现在的秒和当前秒中也已经逝去的微秒数，可以用于程序的计时
+  - 包含头文件 : `<sys/time.h>`
+  - 函数声明
+    ```cpp
+    #include <sys/time.h>
+    int gettimeofday(struct timeval* tv, struct timezone* tz);
+
+    struct timeval {
+        time_t        tv_sec;   // 1970-01-01 到现在的秒数 
+        susecounds_t  tv_usec;  // 在当前秒中已经逝去的微秒数
+    };
+
+    struct timezone { // 在实际开发中, 派不上用场
+        int tz_minuteswest;
+        int tz_dsttime;
+    };
+    ```
+  - 使用方式
+    ```cpp
+    #include <iostream>
+    #include <sys/time.h>
+
+    int main(void) {
+        timeval start, end;
+        gettimeofday(&start, 0);     // 计时开始
+        for(int i = 0; i < 10000; i++) { }
+        gettimeofday(&end, 0);       // 计时结束
+
+        // 计算消耗的时长
+        timeval tv;
+        tv.tv_usec = end.tv_usec - start.tv_usec;
+        tv.tv_sec  = end.tv_sec  - end.tv_sec;
+        if(tv.tv_usec < 0) {
+            tv.tv_usec = 1000000 - tv.tv_usec;
+            tv.tv_sec--;
+        }
+        cout << "耗时 : " << tv.tv_sec << " 秒和 : " << tv.tv_usec << "微秒" << endl; 
+    }
+    ```
+- 程序睡眠
+  - 使用 `sleep()` 或 `usleep()` 函数可以将程序挂起一段时间
+  - 函数声明
+    ```cpp
+    unsigned int sleep(unsigned int seconds);
+    int usleep(useconds_t usec);
+    ```
+### 8. Linux 目录操作
+- 获取当前工作目录
+  - 包含头文件 : `<unistd.h>`
+  - 函数声明
+    ```cpp
+    char* getcwd(char* buf, size_t size);
+    char* get_current_dir_name(void);
+    ```
 
 
