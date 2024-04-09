@@ -382,7 +382,79 @@ UNIX 操作系统根据计算机产生的年代，把 1970 年 01 月 01日作�
         return 0;
     }
     ```
+  - 注意事项
+    - 调用库失败不一定会设置 `errno` <p>
+      并不是全部的库函数在调用失败时都会设置 `errno` 值，以 `man` 手册为准(不属于系统调用的函数不会设置 `errno`)，属于系统调用的函数才会设置 `errno`
+    - `errno` 不能作为调用库函数失败的标志 <p>
+      `errno` 的值只有在库函数调用发生错误时才会被设置，当库函数调用成功时，`errno`的值不会被修改，不会主动的置为 0
+      ```cpp
+      #include <iostream>
+      #include <cstring>      // strerror() 函数需要的头文件
+      #include <cerrno>       // errno 全局变量需要的头文件
+      #include <sys/stat.h>   // mkdir() 函数需要的头文件
 
+      using namespace std;
+
+      int main(void) {
+          // 实际失败, 更新 errno
+          int iret = mkdir("./tmp/aa/bb/cc", 0775);    
+          cout << "iret: " << iret << endl;
+          cout << errno << " : " << strerror(errno) << endl;
+          perror("调用 mkdir(\"./tmp/aa/bb/cc\", 0775) 失败");
+
+          // 实际失败, 但是没有更新 errno
+          iret = mkdir("./tmp", 0775);
+          cout << "iret: " << iret << endl;
+          cout << errno << " : " << strerror(errno) << endl;
+          perror("调用 mkdir(\"./tmp\", 0775) 失败");
+
+          return 0;
+      }
+      ```
+      执行程序如下结果如下：
+      ```text
+      iret: -1
+      2 : No such file or directory
+      调用 mkdir("./tmp/aa/bb/cc", 0775) 失败: No such file or directory
+      iret: 0
+      2 : No such file or directory
+      调用 mkdir("./tmp", 0775) 失败: No such file or directory
+      ```
+      修改后的代码如下:
+      ```cpp
+      #include <iostream>
+      #include <cstring>      // strerror() 函数需要的头文件
+      #include <cerrno>       // errno 全局变量需要的头文件
+      #include <sys/stat.h>   // mkdir() 函数需要的头文件
+
+      using namespace std;
+
+      int main(void) {
+          // 实际失败, 更新 errno
+          int iret = mkdir("./tmp/aa/bb/cc", 0775);    
+          if(iret != 0) {
+              cout << "iret: " << iret << endl;
+              cout << errno << " : " << strerror(errno) << endl;
+              perror("调用 mkdir(\"./tmp/aa/bb/cc\", 0775) 失败");
+          }
+
+          // 实际失败, 但是没有更新 errno
+          iret = mkdir("./tmp", 0775);
+          if(iret != 0) {
+              cout << "iret: " << iret << endl;
+              cout << errno << " : " << strerror(errno) << endl;
+              perror("调用 mkdir(\"./tmp\", 0775) 失败");
+          }
+          return 0;
+      }
+      ```
+      修改后输出如下：
+      ```text
+      iret: -1
+      2 : No such file or directory
+      调用 mkdir("./tmp/aa/bb/cc", 0775) 失败: No such file or directory
+      ```
+### 10. Linux目录和文件的更多操作
 
 
 
