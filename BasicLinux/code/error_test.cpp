@@ -18,7 +18,7 @@ int main(void) {
         perror("调用 mkdir(\"./tmp/aa/bb/cc\", 0775) 失败");
     }
 
-    // 实际失败, 但是没有更新 errno
+    // 实际成功, 但是没有更新 errno
     iret = mkdir("./tmp", 0775);
     if(iret != 0) {
         cout << "iret: " << iret << endl;

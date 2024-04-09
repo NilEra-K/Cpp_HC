@@ -402,7 +402,7 @@ UNIX 操作系统根据计算机产生的年代，把 1970 年 01 月 01日作�
           cout << errno << " : " << strerror(errno) << endl;
           perror("调用 mkdir(\"./tmp/aa/bb/cc\", 0775) 失败");
 
-          // 实际失败, 但是没有更新 errno
+          // 实际成功, 但是没有更新 errno
           iret = mkdir("./tmp", 0775);
           cout << "iret: " << iret << endl;
           cout << errno << " : " << strerror(errno) << endl;
@@ -438,7 +438,7 @@ UNIX 操作系统根据计算机产生的年代，把 1970 年 01 月 01日作�
               perror("调用 mkdir(\"./tmp/aa/bb/cc\", 0775) 失败");
           }
 
-          // 实际失败, 但是没有更新 errno
+          // 实际成功, 但是没有更新 errno
           iret = mkdir("./tmp", 0775);
           if(iret != 0) {
               cout << "iret: " << iret << endl;
