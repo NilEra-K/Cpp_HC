@@ -454,7 +454,113 @@ UNIX 操作系统根据计算机产生的年代，把 1970 年 01 月 01日作�
       2 : No such file or directory
       调用 mkdir("./tmp/aa/bb/cc", 0775) 失败: No such file or directory
       ```
-### 10. Linux目录和文件的更多操作
+### 10. Linux目录和文件的操作
+- `access()` 库函数
+  - 包含头文件：`#include <unistd.h>`
+  - 函数声明：`int access(const char* pathname, int mode)` <p>
+  - 参数说明：<p>
+    `pathname`：目录或文件名
+    `mode`：需要判断的存取权限。在头文件`<unistd>`中的预定义如下：
+    ```cpp
+    #define R_OK  4
+    #define W_OK  2
+    #define X_OK  1
+    #define F_OK  0
+    ```
+  - 返回值：<p>
+    当 `pathname` 满足 `mode` 权限返回 `0`，不满足返回 `-1`，`errno` 被设置 <p>
+    在实际开发中，`access()` 函数主要用于判断目录或者文件是否存在
+- `stat()` 库函数
+  - `stat` 结构体
+    ```cpp
+    struct stat  
+    {   
+        dev_t       st_dev;     /* ID of device containing file -文件所在设备的ID*/  
+        ino_t       st_ino;     /* inode number -inode节点号*/    
+        mode_t      st_mode;    /* protection -保护模式?*/    
+        nlink_t     st_nlink;   /* number of hard links -链向此文件的连接数(硬连接)*/    
+        uid_t       st_uid;     /* user ID of owner -user id*/    
+        gid_t       st_gid;     /* group ID of owner - group id*/    
+        dev_t       st_rdev;    /* device ID (if special file) -设备号，针对设备文件*/    
+        off_t       st_size;    /* total size, in bytes -文件大小，字节为单位*/    
+        blksize_t   st_blksize; /* blocksize for filesystem I/O -系统块的大小*/    
+        blkcnt_t    st_blocks;  /* number of blocks allocated -文件所占块数*/    
+        time_t      st_atime;   /* time of last access -最近存取时间*/    
+        time_t      st_mtime;   /* time of last modification -最近修改时间*/    
+        time_t      st_ctime;   /* time of last status change - */    
+    };  
+    ```
+    struct stat结构体的成员变量比较多，重点关注 `st_mode`、`st_size`和`st_mtime`成员，注意: `st_mtime` 是一个正数表示的时间，需要程序员自己写代码转换格式 <p>
+    `st_mode` 成员的取值很多，或者使用如下两个宏来判断。
+    - `S_ISREG(st_mode)` 是否为普通文件，如果是返回真
+    - `S_ISDIR(st_mode)` 是否为目录，如果是返回真
+  - `stat()` 库函数
+    - 包含头文件：`#include <sys/stat.h>`
+    - 函数声明：`int stat(const char* path, struct stat* buf)`
+    - 返回值：`0`-成功；`-1`失败，`errno`被设置
+    - `stat()` 函数获取 `path` 参数指定目录或文件的详细信息，保存到 `buf` 结构体中。
+    - 示例代码
+      ```cpp
+      #include <iostream>
+      #include <cstdio>
+      #include <cstring>
+      #include <sys/stat.h>
+      #include <unistd.h>
+
+      using namespace std;
+      int main(int argc, char* argv[]) {
+          if(argc != 2) {
+              cout << "[USAGE] ./dir_test <filename | dirname>" << endl;
+              return -1;
+          }
+          struct stat st; // 存放目录或者文件详细信息的结构体
+
+          // 获取目录或文件的详细信息
+          if (stat(argv[1], &st) != 0) {
+              cout << "stat(" << argv[1] << "):" << strerror(errno) << endl;
+          }
+
+          if(S_ISREG(st.st_mode)) {
+              cout << argv[1] 
+                  << "是一个文件(" 
+                  << "mtime = "
+                  << st.st_mode
+                  << ", size = "
+                  << st.st_size
+                  << ")" << endl;
+          }
+
+          if(S_ISDIR(st.st_mode)) {
+              cout << argv[1] 
+                  << "是一个目录(" 
+                  << "mtime = "
+                  << st.st_mode
+                  << ", size = "
+                  << st.st_size
+                  << ")" << endl;
+          }
+      }
+      ```
+  - `utime()` 库函数
+    - 包含头文件：`#include <utime.h>`
+    - 函数声明：`int utime(const char* filename, const struct utimebuf* times);`
+    - `utimebuf` 结构声明如下：
+      ```cpp
+      struct utimbuf {
+          time_t actime;
+          time_t modtime;
+      };
+      ```
+    - 返回值：`0`-成功；`-1`-失败，`errno` 被设置
+    - `utime()` 函数用来修改函数 `filename` 的 `st_atime` 和 `st_mtime`。如果参数 `times` 为空地址，则设置为当前时间。
+  - `rename()` 库函数
+    - 包含头文件：`#include <stdio.h>`
+    - 函数声明：`int rename(const char* oldpath, const char* newpath)`
+    - 返回值：`0`-成功；`-1`-失败，`errno` 被设置
+
+
+
+
 
 
 
